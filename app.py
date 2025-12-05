@@ -4,7 +4,8 @@ from openai import OpenAI
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()  # loads .env file locally; on Render we use env vars
+# Load .env locally; on Render we use service env vars
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -35,7 +36,8 @@ If unsure about a policy, say:
 "I'm not 100% sure based on the info I have. Please confirm with Ryan or check the official handbook."
 """
 
-def send_groupme_message(text: str):
+
+def send_groupme_message(text: str) -> None:
     """Send a message back into the GroupMe group using the bot."""
     if not GROUPME_BOT_ID:
         print("ERROR: GROUPME_BOT_ID is missing, cannot send message.")
@@ -60,8 +62,14 @@ def health_check():
     return "Manager.API is running", 200
 
 
-@app.route("/groupme_callback", methods=["POST"])
+@app.route("/groupme_callback", methods=["GET", "POST"])
 def groupme_callback():
+    # If you hit this route in a browser, you should see this message
+    if request.method == "GET":
+        print("Received GET /groupme_callback (health check)")
+        return "groupme_callback is alive", 200
+
+    # GroupMe sends POST requests here
     data = request.json or {}
     print("Received callback payload:", data)
 
