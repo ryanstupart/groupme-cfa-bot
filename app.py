@@ -245,72 +245,55 @@ Remember:
 """
 
 def send_groupme_message(text: str) -> None:
-    """Send a message back into the GroupMe group using the bot."""
     if not GROUPME_BOT_ID:
         print("ERROR: GROUPME_BOT_ID is missing, cannot send message.")
         return
 
     url = "https://api.groupme.com/v3/bots/post"
-    payload = {
-        "bot_id": GROUPME_BOT_ID,
-        "text": text[:995],  # GroupMe limit ~1000 chars
-    }
+    payload = {"bot_id": GROUPME_BOT_ID, "text": text[:995]}
     print(f"Sending message to GroupMe: {payload}")
+
     try:
         resp = requests.post(url, json=payload)
         print(f"GroupMe response status: {resp.status_code}, body: {resp.text}")
     except Exception as e:
         print(f"Error sending message to GroupMe: {e}")
 
-
 @app.route("/", methods=["GET", "HEAD"])
 def health_check():
-    """Simple health check so / doesn't 404."""
     return "Manager.API is running", 200
-
 
 @app.route("/groupme_callback", methods=["GET", "POST"])
 def groupme_callback():
-    # If you hit this route in a browser, you should see this message
     if request.method == "GET":
-        print("Received GET /groupme_callback (health check)")
+        print("Received GET /groupme_callback")
         return "groupme_callback is alive", 200
 
-    # GroupMe sends POST requests here
     data = request.json or {}
     print("Received callback payload:", data)
 
     text = data.get("text", "")
     sender_type = data.get("sender_type", "")
 
-    # Ignore messages sent by the bot itself
     if sender_type == "bot":
-        print("Ignoring bot message")
         return "ok", 200
 
     if not text:
-        print("No text in message, ignoring")
         return "ok", 200
 
-    # Only respond when leaders type mgmt:
     if not text.lower().startswith("mgmt:"):
-        print("Message does not start with mgmt:, ignoring")
         return "ok", 200
 
     user_question = text[len("mgmt:"):].strip()
     print(f"User question: {user_question}")
 
     if not OPENAI_API_KEY:
-        print("ERROR: OPENAI_API_KEY is missing")
-        send_groupme_message("Manager.API error: OPENAI_API_KEY is not configured.")
+        send_groupme_message("Manager.API error: OPENAI_API_KEY missing.")
         return "ok", 200
 
     try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages[
-
-::contentReference[oaicite:0]{index=0}
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_question},
@@ -323,14 +306,12 @@ def groupme_callback():
         send_groupme_message(ai_response)
 
     except Exception as e:
-        print("Error while calling OpenAI or sending response:", repr(e))
+        print("Error calling OpenAI:", repr(e))
         send_groupme_message(
-            "Manager.API had an error processing that request. "
-            "Please let a leader know and try again later."
+            "Manager.API had an error processing that request. Please let a leader know."
         )
 
     return "ok", 200
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
