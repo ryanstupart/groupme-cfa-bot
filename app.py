@@ -304,8 +304,9 @@ AFFIRMATIONS = [
     "Leadership reminder: Reinforce the standard early so the shift runs smoother later.",
 ]
 
+TRAINER_REMINDER = "Trainer Reminder: Please remember to submit training reports for any training done today."
+
 HOLIDAYS = {
-    # month-day : message
     "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
     "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
 }
@@ -313,16 +314,21 @@ HOLIDAYS = {
 @app.route("/scheduled/send", methods=["GET"])
 def scheduled_send():
     token = request.args.get("token", "")
+    kind = (request.args.get("kind", "") or "").lower().strip()
+
     if not SCHEDULE_SECRET or token != SCHEDULE_SECRET:
         return "Unauthorized", 401
 
-    today = datetime.datetime.now(datetime.timezone.utc)  # keep UTC to match cron timing
-    mmdd = today.strftime("%m-%d")
+    # Choose message based on kind
+    if kind == "trainer_reminder":
+        msg = TRAINER_REMINDER
 
-    if mmdd in HOLIDAYS:
-        msg = HOLIDAYS[mmdd]
+    elif kind == "affirmation":
+        mmdd = datetime.datetime.now().strftime("%m-%d")
+        msg = HOLIDAYS.get(mmdd, random.choice(AFFIRMATIONS))
+
     else:
-        msg = random.choice(AFFIRMATIONS)
+        return "Bad Request: kind must be affirmation or trainer_reminder", 400
 
     send_groupme_message(msg)
     return "OK", 200
