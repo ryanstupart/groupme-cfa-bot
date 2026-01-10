@@ -292,16 +292,13 @@ def groupme_callback():
         )
 
     return "ok", 200
+    
     @app.route("/test_scheduled_message", methods=["GET"])
-        def test_scheduled_message():
-        """
-        Manual test endpoint to simulate a scheduled message.
-        Safe for testing proactive GroupMe messages.
-        """
+    def test_scheduled_message():
         test_message = (
-            "Leadership reminder: Thank you for reinforcing standards through example today. "
-            "Consistency, clarity, and presence make a real difference for the team and our guests."
-        )
+            "Leadership reminder: Thank you for leading with consistency today. "
+            "Reinforcing standards through example makes a real difference."
+    )
 
     send_groupme_message(test_message)
     return "Test scheduled message sent", 200
