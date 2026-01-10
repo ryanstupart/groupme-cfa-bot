@@ -293,15 +293,40 @@ def groupme_callback():
 
     return "ok", 200
     
-@app.route("/test_scheduled_message", methods=["GET"])
-def test_scheduled_message():
-    test_message = (
-        "Leadership reminder: Thank you for leading with consistency today. "
-        "Reinforcing standards through example makes a real difference."
-    )
+import datetime
+import random
 
-    send_groupme_message(test_message)
-    return "Test scheduled message sent", 200
+SCHEDULE_SECRET = os.getenv("SCHEDULE_SECRET", "")
+
+AFFIRMATIONS = [
+    "Leadership reminder: Stay present, stay consistent. Standards rise when we do.",
+    "Leadership reminder: Clear expectations + calm tone = a stronger shift.",
+    "Leadership reminder: Reinforce the standard early so the shift runs smoother later.",
+]
+
+HOLIDAYS = {
+    # month-day : message
+    "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
+    "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
+}
+
+@app.route("/scheduled/send", methods=["GET"])
+def scheduled_send():
+    token = request.args.get("token", "")
+    if not SCHEDULE_SECRET or token != SCHEDULE_SECRET:
+        return "Unauthorized", 401
+
+    today = datetime.datetime.now(datetime.timezone.utc)  # keep UTC to match cron timing
+    mmdd = today.strftime("%m-%d")
+
+    if mmdd in HOLIDAYS:
+        msg = HOLIDAYS[mmdd]
+    else:
+        msg = random.choice(AFFIRMATIONS)
+
+    send_groupme_message(msg)
+    return "OK", 200
+
 
 
 
