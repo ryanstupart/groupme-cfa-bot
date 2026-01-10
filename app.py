@@ -293,7 +293,6 @@ def groupme_callback():
 
     return "ok", 200
     @app.route("/test_scheduled_message", methods=["GET"])
-    
     def test_scheduled_message():
     """
     Manual test endpoint to simulate a scheduled message.
