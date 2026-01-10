@@ -293,15 +293,16 @@ def groupme_callback():
 
     return "ok", 200
     
-    @app.route("/test_scheduled_message", methods=["GET"])
-    def test_scheduled_message():
-        test_message = (
-            "Leadership reminder: Thank you for leading with consistency today. "
-            "Reinforcing standards through example makes a real difference."
+@app.route("/test_scheduled_message", methods=["GET"])
+def test_scheduled_message():
+    test_message = (
+        "Leadership reminder: Thank you for leading with consistency today. "
+        "Reinforcing standards through example makes a real difference."
     )
 
     send_groupme_message(test_message)
     return "Test scheduled message sent", 200
+
 
 
 if __name__ == "__main__":
