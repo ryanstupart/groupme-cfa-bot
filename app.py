@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GROUPME_BOT_ID = os.getenv("GROUPME_BOT_ID")
-SCHEDULE_SECRET = os.getenv("SCHEDULE_SECRET", "")
+SCHEDULE_SECRET = os.getenv("SCHEDULE_SECRET", "cfa-leadership-2026-7F9aQ3LxM82pVdRk")
 
 print("Starting Eat Mor Chikin...")
 print(f"Has OPENAI_API_KEY? {'yes' if OPENAI_API_KEY else 'NO'}")
@@ -33,8 +33,9 @@ BOT IDENTITY
 
 AUDIENCE
 - Team leaders, trainers, and managers at Chick-fil-A.
-- You are for leadership support and store operations.
-- Your autonomous chat behavior is currently in beta.
+- You are ONLY for leaders, not for general team members.
+- Autonomous coverage reminders are currently in beta.
+- For all other AI questions, leaders should still use "mgmt:" at the beginning of the message.
 
 IDENTITY & PHILOSOPHY
 - You operate with a LEADERSHIP mindset, not a “just manage the policy” mindset.
@@ -43,10 +44,10 @@ IDENTITY & PHILOSOPHY
   - Leads by example.
   - Inspires growth and positive culture.
   - Reinforces the STANDARD so policies are naturally followed.
-- Emphasize reinforcing standards over merely quoting policy.
+- Emphasize reinforcing standards over quoting policy.
 - Maintain clarity, consistency, professionalism, and leadership presence.
 - Never name specific individuals.
-- You provide guidance and coaching, not final approvals or disciplinary decisions.
+- You provide guidance and coaching, not decisions or approvals.
 
 TONE & RESPONSE STYLE
 - Professional, calm, clear, and confident.
@@ -99,7 +100,7 @@ COMMERCEPOINT / POS / KPS
 - CommercePoint includes:
   - ServicePoint: the new POS system.
   - ViewPoint: the updated KPS system.
-- CommercePoint is a newer system, so leaders need to be patient and do more foundational support and coaching.
+- CommercePoint is newer, so leaders need to be patient and do more foundational support and coaching.
 - Leaders should support each other during the transition because some core functions remain similar, but the overall system is still a major change.
 - Good reminders for leaders:
   - Equipment like tablets, card readers, and devices must be handled with care.
@@ -291,7 +292,8 @@ COVERAGE_REMINDER = (
 UPDATE_NOTE = (
     "Eat Mor Chikin Update: I’ve expanded my knowledge of CommercePoint, ServicePoint, ViewPoint, "
     "guest name usage standards, and more store policy guidance. I can now respond autonomously to "
-    "certain coverage-related messages without a keyword. That autonomous listening is currently in beta."
+    "certain coverage-related messages without a keyword. That autonomous behavior is currently in beta. "
+    "For all other questions, please continue using mgmt: at the beginning of your message."
 )
 
 AFFIRMATIONS = [
@@ -311,7 +313,6 @@ HOLIDAYS = {
     "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
 }
 
-# Beta autonomous coverage trigger patterns
 COVERAGE_PATTERNS = [
     r"\bi can[’']?t make my shift\b",
     r"\bi cant make my shift\b",
@@ -319,7 +320,7 @@ COVERAGE_PATTERNS = [
     r"\bi cant make it tomorrow\b",
     r"\bcan someone cover me tomorrow\b",
     r"\bcan someone cover my shift\b",
-    r"\bneed coverage for my shift\b",
+    r"\bneed coverage\b",
 ]
 
 def send_groupme_message(text: str) -> None:
@@ -357,19 +358,48 @@ def groupme_callback():
     text = data.get("text", "") or ""
     sender_type = data.get("sender_type", "")
 
-    # Ignore bot messages and blanks
     if sender_type == "bot":
         return "ok", 200
 
     if not text.strip():
         return "ok", 200
 
-    # Beta autonomous rule: coverage reminder only
+    # Beta autonomous rule: coverage reminders only
     if is_coverage_trigger(text):
         send_groupme_message(COVERAGE_REMINDER)
         return "ok", 200
 
-    # No other autonomous chat replies yet
+    # Everything else still requires mgmt:
+    if not text.lower().startswith("mgmt:"):
+        return "ok", 200
+
+    user_question = text[len("mgmt:"):].strip()
+    print(f"User question: {user_question}")
+
+    if not OPENAI_API_KEY:
+        send_groupme_message("Eat Mor Chikin error: OPENAI_API_KEY missing.")
+        return "ok", 200
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_question},
+            ],
+            temperature=0.2,
+        )
+
+        ai_response = completion.choices[0].message.content
+        print("AI response:", ai_response)
+        send_groupme_message(ai_response)
+
+    except Exception as e:
+        print("Error calling OpenAI:", repr(e))
+        send_groupme_message(
+            "Eat Mor Chikin had an error processing that request. Please let a leader know."
+        )
+
     return "ok", 200
 
 @app.route("/scheduled/send", methods=["GET"])
