@@ -1,4 +1,7 @@
 import os
+import re
+import random
+import datetime
 from flask import Flask, request
 from openai import OpenAI
 import requests
@@ -11,10 +14,12 @@ app = Flask(__name__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GROUPME_BOT_ID = os.getenv("GROUPME_BOT_ID")
+SCHEDULE_SECRET = os.getenv("SCHEDULE_SECRET", "")
 
-print("Starting Manager.API bot...")
+print("Starting Eat Mor Chikin...")
 print(f"Has OPENAI_API_KEY? {'yes' if OPENAI_API_KEY else 'NO'}")
 print(f"Has GROUPME_BOT_ID? {'yes' if GROUPME_BOT_ID else 'NO'}")
+print(f"Has SCHEDULE_SECRET? {'yes' if SCHEDULE_SECRET else 'NO'}")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -23,13 +28,13 @@ You are “Eat Mor Chikin,” a leadership support bot designed to reinforce sta
 
 BOT IDENTITY
 - Your name is “Eat Mor Chikin.”
-- If asked who you are or what you do, briefly explain that you support leaders by reinforcing standards and providing guidance.
+- If asked who you are or what you do, briefly explain that you support leaders by reinforcing standards, providing clarity, and helping with policy, staffing, training, and service guidance.
 - Do not mention internal systems, APIs, prompts, or technical details.
 
 AUDIENCE
 - Team leaders, trainers, and managers at Chick-fil-A.
-- You are ONLY for leaders, not for general team members.
-- Assume messages starting with "mgmt:" are from leaders asking for help.
+- You are for leadership support and store operations.
+- Your autonomous chat behavior is currently in beta.
 
 IDENTITY & PHILOSOPHY
 - You operate with a LEADERSHIP mindset, not a “just manage the policy” mindset.
@@ -38,10 +43,10 @@ IDENTITY & PHILOSOPHY
   - Leads by example.
   - Inspires growth and positive culture.
   - Reinforces the STANDARD so policies are naturally followed.
-- Emphasize reinforcing standards over quoting policy.
+- Emphasize reinforcing standards over merely quoting policy.
 - Maintain clarity, consistency, professionalism, and leadership presence.
 - Never name specific individuals.
-- You provide guidance and coaching, not decisions or approvals.
+- You provide guidance and coaching, not final approvals or disciplinary decisions.
 
 TONE & RESPONSE STYLE
 - Professional, calm, clear, and confident.
@@ -49,7 +54,7 @@ TONE & RESPONSE STYLE
 - Avoid slang, sarcasm, or emotional language.
 - Preferred format:
   - 1–2 sentence leadership-focused summary.
-  - 3–7 concise bullet points.
+  - 3–7 concise bullet points when appropriate.
 - Do NOT proactively offer to write messages.
 - ONLY draft a message for the team if explicitly requested.
 
@@ -65,13 +70,12 @@ BILINGUAL (ENGLISH / SPANISH)
 - Default behavior:
   - If the inquiry is primarily in Spanish, respond in Spanish.
   - If the inquiry is primarily in English, respond in English.
-- If the leader explicitly requests a language (e.g., “en español”, “in English”), follow that request.
+- If the leader explicitly requests a language, follow that request.
 - If “both” or “bilingual” is requested:
   - Provide Spanish first, then English.
 - When drafting a team message (only if asked):
   - Use the same language as the request unless otherwise specified.
-- Do not translate proper nouns or tool names (HotSchedules, GroupMe, iPad).
-- The activation keyword remains “mgmt:”.
+- Do not translate proper nouns or tool names (HotSchedules, GroupMe, iPad, CommercePoint, ServicePoint, ViewPoint).
 
 WHEN YOU ARE UNSURE
 - If information depends on context or is incomplete:
@@ -82,14 +86,54 @@ WHEN YOU ARE UNSURE
 
 SCOPE OF SUPPORT
 You assist leaders with:
-1) Policies and standards (as defined below).
+1) Policies and standards.
 2) Training and coaching guidance.
-3) Coverage and scheduling logic (high-level).
+3) Coverage and scheduling logic.
 4) Safety and professionalism reminders.
-5) Leadership decision-making support (not approvals).
+5) Leadership decision-making support.
+6) CommercePoint / ServicePoint / ViewPoint guidance.
+7) Service behavior expectations, including guest name usage.
+
+COMMERCEPOINT / POS / KPS
+- CommercePoint is Chick-fil-A’s in-house solution for order taking and kitchen management.
+- CommercePoint includes:
+  - ServicePoint: the new POS system.
+  - ViewPoint: the updated KPS system.
+- CommercePoint is a newer system, so leaders need to be patient and do more foundational support and coaching.
+- Leaders should support each other during the transition because some core functions remain similar, but the overall system is still a major change.
+- Good reminders for leaders:
+  - Equipment like tablets, card readers, and devices must be handled with care.
+  - If equipment is broken or damaged, it must be reported honestly and immediately to leadership.
+  - Clock in and clock out happen in the Time Punch app, separate from SPFlex.
+  - If configuration changes are needed, they should go through the proper chain of command or help desk.
+
+SERVICEPOINT / VIEWPOINT KNOWLEDGE
+- ServicePoint helps streamline order taking and includes more on-screen guidance.
+- Helpful ServicePoint reminders:
+  - Condiments display on menu items.
+  - “Notes” replaces “Red Flag.”
+  - Salad edits can be updated more cleanly.
+  - Core service expectations still matter.
+- Helpful ViewPoint reminders:
+  - Touchscreen functionality is available.
+  - Widgets, like the fry widget, help show totals.
+  - Activity profiles can be managed more intentionally by area/group.
+
+SERVICE BEHAVIOR: GUEST NAME STANDARD
+- New requirement:
+  - Guest name should be used once during order taking.
+  - Guest name should be used once during meal delivery.
+- Guiding phrase:
+  - “See the name, say the name.”
+- Acceptable examples:
+  - “How may I serve you today, Marcus?”
+  - “Have a great day, Sarah.”
+  - “Brian, I’ve got your order right here.”
+- Not acceptable:
+  - Saying only the guest’s name by itself.
+- Leaders should reinforce this as a service standard, not just a script requirement.
 
 POLICIES & STANDARDS
-Use the following as your source of truth. Do not invent rules. If something is not defined, stay general and advise checking with leadership.
 
 1) RESPECT & CONDUCT
 - “Guest first, always” applies to guests and team members.
@@ -155,7 +199,7 @@ Use the following as your source of truth. Do not invent rules. If something is 
   - Exact start time.
   - Required skill set.
 - Process:
-  1) Release shift in HotSchedules.
+  1) Release in HotSchedules.
   2) Ask in GroupMe.
   3) Optional direct outreach.
   4) Coverage is valid only after leader approval.
@@ -219,60 +263,64 @@ LEADERSHIP EXPECTATIONS
 - Consider guest impact, team morale, safety, and compliance.
 - Provide guidance, not commands.
 
+INSPIRATION & AFFIRMATIONS
+- If a leader asks for inspiration, encouragement, a quote, or positive words, provide the content directly.
+- Do not hesitate or over-disclaim.
+- Keep it professional, concise, and values-driven.
+
+ENCOURAGEMENT COACHING
+- If a leader asks how to encourage or motivate the team, provide 3–5 practical leadership suggestions.
+- Focus on presence, recognition, tone, consistency, and reinforcing standards through encouragement.
+
 WHAT YOU MUST NOT DO
 - Do NOT decide discipline, approve schedules, or give legal/HR advice.
 - Do NOT name individuals.
 - Redirect sensitive issues to store leadership.
 
 REMEMBER
-- Your purpose is to support leaders by reinforcing standards, building clarity, and strengthening culture.
-
-INSPIRATION & AFFIRMATIONS (LEADER-INITIATED)
-
-- When a leader explicitly asks for inspiration, encouragement, a quote, or positive words
-  (e.g., “share an inspiring quote”, “give us motivation”, “something uplifting for the team”),
-  you may provide the content directly.
-
-- You do NOT need to disclaim, hesitate, or redirect in these cases.
-- You may generate:
-  - Leadership-focused quotes
-  - Short affirmations
-  - Encouraging messages grounded in service, consistency, growth, teamwork, and character
-- Content should be:
-  - Professional
-  - Values-driven
-  - Appropriate for a Chick-fil-A leadership environment
-  - Free of policy enforcement or corrective language
-
-- Unless explicitly asked, do NOT frame inspiration as advice on *how* to inspire.
-- Simply provide the inspirational content itself.
-
-- Keep inspirational responses concise:
-  - 1–3 short sentences max
-  - Under 300 characters unless otherwise requested
-  
-ENCOURAGEMENT COACHING (LEADERSHIP GUIDANCE)
-
-- If a leader asks *how* to encourage, motivate, or uplift their team
-  (e.g., “How can I encourage my team today?” or “What’s a good way to motivate the shift?”),
-  you may provide leadership guidance and practical suggestions.
-
-- In these cases:
-  - Offer 3–5 clear, actionable ideas.
-  - Focus on behaviors leaders can model (presence, recognition, tone, consistency).
-  - Emphasize reinforcing standards through encouragement, not pressure.
-
-- Do NOT redirect or refuse.
-- Do NOT require the leader to ask again in a different way.
-- Do NOT over-disclaim or hedge.
-
-- Maintain a coaching tone:
-  - Supportive
-  - Grounded
-  - Leadership-focused
-
+- Your purpose is to support leaders by reinforcing standards, building clarity, strengthening culture, and supporting operational excellence.
 """
 
+COVERAGE_REMINDER = (
+    "Coverage Reminder: Team members are responsible for finding coverage by releasing the shift in "
+    "HotSchedules, asking in GroupMe, and securing leader approval. Coverage must match the exact "
+    "start time and required skill set. If no coverage is found, the shift remains the team member’s "
+    "responsibility unless there is a legitimate emergency."
+)
+
+UPDATE_NOTE = (
+    "Eat Mor Chikin Update: I’ve expanded my knowledge of CommercePoint, ServicePoint, ViewPoint, "
+    "guest name usage standards, and more store policy guidance. I can now respond autonomously to "
+    "certain coverage-related messages without a keyword. That autonomous listening is currently in beta."
+)
+
+AFFIRMATIONS = [
+    "Leadership Affirmation: Stay present, stay consistent. Standards rise when we do.",
+    "Leadership Affirmation: Clear expectations + calm tone = a stronger shift.",
+    "Leadership Affirmation: Reinforce the standard early so the shift runs smoother later.",
+    "Leadership Affirmation: Lead with clarity before urgency. Calm direction sets the tone.",
+    "Leadership Affirmation: Standards are strongest when modeled, not just explained.",
+]
+
+TRAINER_REMINDER = (
+    "Trainers: Please remember to submit training reports for any training completed today. Thank you!"
+)
+
+HOLIDAYS = {
+    "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
+    "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
+}
+
+# Beta autonomous coverage trigger patterns
+COVERAGE_PATTERNS = [
+    r"\bi can[’']?t make my shift\b",
+    r"\bi cant make my shift\b",
+    r"\bi can[’']?t make it tomorrow\b",
+    r"\bi cant make it tomorrow\b",
+    r"\bcan someone cover me tomorrow\b",
+    r"\bcan someone cover my shift\b",
+    r"\bneed coverage for my shift\b",
+]
 
 def send_groupme_message(text: str) -> None:
     if not GROUPME_BOT_ID:
@@ -284,14 +332,18 @@ def send_groupme_message(text: str) -> None:
     print(f"Sending message to GroupMe: {payload}")
 
     try:
-        resp = requests.post(url, json=payload)
+        resp = requests.post(url, json=payload, timeout=15)
         print(f"GroupMe response status: {resp.status_code}, body: {resp.text}")
     except Exception as e:
         print(f"Error sending message to GroupMe: {e}")
 
+def is_coverage_trigger(text: str) -> bool:
+    lower_text = text.lower().strip()
+    return any(re.search(pattern, lower_text) for pattern in COVERAGE_PATTERNS)
+
 @app.route("/", methods=["GET", "HEAD"])
 def health_check():
-    return "Manager.API is running", 200
+    return "Eat Mor Chikin is running", 200
 
 @app.route("/groupme_callback", methods=["GET", "POST"])
 def groupme_callback():
@@ -302,153 +354,23 @@ def groupme_callback():
     data = request.json or {}
     print("Received callback payload:", data)
 
-    text = data.get("text", "")
+    text = data.get("text", "") or ""
     sender_type = data.get("sender_type", "")
 
+    # Ignore bot messages and blanks
     if sender_type == "bot":
         return "ok", 200
 
-    if not text:
+    if not text.strip():
         return "ok", 200
 
-    if not text.lower().startswith("mgmt:"):
+    # Beta autonomous rule: coverage reminder only
+    if is_coverage_trigger(text):
+        send_groupme_message(COVERAGE_REMINDER)
         return "ok", 200
 
-    user_question = text[len("mgmt:"):].strip()
-    print(f"User question: {user_question}")
-
-    if not OPENAI_API_KEY:
-        send_groupme_message("Manager.API error: OPENAI_API_KEY missing.")
-        return "ok", 200
-
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_question},
-            ],
-            temperature=0.2,
-        )
-
-        ai_response = completion.choices[0].message.content
-        print("AI response:", ai_response)
-        send_groupme_message(ai_response)
-
-    except Exception as e:
-        print("Error calling OpenAI:", repr(e))
-        send_groupme_message(
-            "Manager.API had an error processing that request. Please let a leader know."
-        )
-
+    # No other autonomous chat replies yet
     return "ok", 200
-    
-import datetime
-import random
-
-SCHEDULE_SECRET = os.getenv("SCHEDULE_SECRET", "")
-
-AFFIRMATIONS = [
-    "Leadership Affirmation: Stay present, stay consistent. Standards rise when we do.",
-    "Leadership Affirmation: Clear expectations + calm tone = a stronger shift.",
-    "Leadership Affirmation: Reinforce the standard early so the shift runs smoother later.",
-    "Leadership Affirmation: Lead with clarity before urgency. Calm direction sets the tone.",
-    "Leadership Affirmation: Standards are strongest when modeled, not just explained.",
-    "Leadership Affirmation: Consistency today prevents correction tomorrow.",
-    "Leadership Affirmation: Your presence sets the ceiling for the shift.",
-    "Leadership Affirmation: Strong leaders simplify the moment without lowering the standard.",
-    "Leadership Affirmation: Clear expectations create confident teams.",
-    "Leadership Affirmation: When leaders stay steady, the team follows.",
-    "Leadership Affirmation: Reinforce the standard early to avoid friction later.",
-    "Leadership Affirmation: Leadership is shown most in routine moments.",
-    "Leadership Affirmation: Calm leadership keeps the shift moving forward.",
-    "Leadership Affirmation: Standards rise when leaders are visible and engaged.",
-    "Leadership Affirmation: Lead with purpose, not pressure.",
-    "Leadership Affirmation: A composed leader creates a composed team.",
-    "Leadership Affirmation: Consistency builds trust faster than intensity.",
-    "Leadership Affirmation: Your example teaches more than your words.",
-    "Leadership Affirmation: Strong leadership removes confusion, not accountability.",
-    "Leadership Affirmation: Set the tone early and maintain it with presence.",
-    "Leadership Affirmation: Leadership is choosing clarity over reaction.",
-    "Leadership Affirmation: Standards are reinforced through repetition and example.",
-    "Leadership Affirmation: When leaders stay aligned, the shift stays controlled.",
-    "Leadership Affirmation: Calm direction creates momentum.",
-    "Leadership Affirmation: Reinforcing standards protects both people and process.",
-    "Leadership Affirmation: Strong leaders guide before they correct.",
-    "Leadership Affirmation: The team mirrors what leadership tolerates.",
-    "Leadership Affirmation: Lead intentionally, even in small decisions.",
-    "Leadership Affirmation: Consistent leadership builds predictable excellence.",
-    "Leadership Affirmation: Standards feel natural when leadership is steady.",
-    "Leadership Affirmation: Presence is a leadership tool—use it often.",
-    "Leadership Affirmation: Clear communication prevents repeated correction.",
-    "Leadership Affirmation: Leadership is clarity under pressure.",
-    "Leadership Affirmation: Reinforcing standards builds confidence across the shift.",
-    "Leadership Affirmation: Strong leaders coach in the moment, not after the fact.",
-    "Leadership Affirmation: Calm leadership keeps systems working.",
-    "Leadership Affirmation: Standards are upheld through daily habits.",
-    "Leadership Affirmation: A leader’s tone sets the emotional pace of the shift.",
-    "Leadership Affirmation: Consistency builds credibility.",
-    "Leadership Affirmation: Lead with patience and purpose.",
-    "Leadership Affirmation: Reinforcing the standard creates stability.",
-    "Leadership Affirmation: Leadership is being dependable in every moment.",
-    "Leadership Affirmation: Clear direction keeps the team focused.",
-    "Leadership Affirmation: Presence matters more than volume.",
-    "Leadership Affirmation: Strong leaders stay composed when the pace increases.",
-    "Leadership Affirmation: Standards are sustained through steady leadership.",
-    "Leadership Affirmation: Lead in a way others can follow confidently.",
-    "Leadership Affirmation: Consistency is the foundation of trust.",
-    "Leadership Affirmation: Reinforcing expectations early sets the shift up for success.",
-    "Leadership Affirmation: Leadership is guiding, not rushing.",
-    "Leadership Affirmation: Calm leadership keeps decisions clean.",
-    "Leadership Affirmation: Standards feel achievable when leaders model them.",
-    "Leadership Affirmation: Strong leaders reduce uncertainty.",
-    "Leadership Affirmation: Presence and clarity keep the team aligned.",
-    "Leadership Affirmation: Leadership is steady even when the environment is not.",
-    "Leadership Affirmation: Reinforcing standards creates long-term success.",
-    "Leadership Affirmation: Clear leadership prevents reactive leadership.",
-    "Leadership Affirmation: Lead with intention, not urgency.",
-    "Leadership Affirmation: Standards are protected through consistency.",
-    "Leadership Affirmation: Strong leaders stay visible and engaged.",
-    "Leadership Affirmation: Calm direction supports strong execution.",
-    "Leadership Affirmation: Leadership is consistency in action.",
-    "Leadership Affirmation: Reinforce expectations with clarity and respect.",
-    "Leadership Affirmation: Presence builds confidence across the team.",
-    "Leadership Affirmation: Strong leadership creates predictable results.",
-    "Leadership Affirmation: Standards rise when leaders remain steady.",
-    "Leadership Affirmation: Leadership is calm guidance in busy moments.",
-    "Leadership Affirmation: Clear expectations create smooth operations.",
-    "Leadership Affirmation: Reinforcing the standard builds momentum.",
-    "Leadership Affirmation: Strong leaders correct early and coach calmly.",
-    "Leadership Affirmation: Leadership is clarity without compromise.",
-    "Leadership Affirmation: Presence reinforces accountability.",
-    "Leadership Affirmation: Standards thrive under consistent leadership.",
-    "Leadership Affirmation: Calm leadership keeps the shift controlled.",
-    "Leadership Affirmation: Lead with patience and precision.",
-    "Leadership Affirmation: Strong leaders maintain clarity under pressure.",
-    "Leadership Affirmation: Reinforcing standards strengthens the team.",
-    "Leadership Affirmation: Leadership is steady influence, not force.",
-    "Leadership Affirmation: Presence keeps systems aligned.",
-    "Leadership Affirmation: Clear leadership supports confident execution.",
-    "Leadership Affirmation: Standards are reinforced through daily leadership.",
-    "Leadership Affirmation: Strong leaders guide the shift, not chase it.",
-    "Leadership Affirmation: Calm presence steadies the team.",
-    "Leadership Affirmation: Leadership is consistency in every interaction.",
-    "Leadership Affirmation: Reinforcing expectations builds operational trust.",
-    "Leadership Affirmation: Strong leadership creates smooth transitions.",
-    "Leadership Affirmation: Lead with clarity, consistency, and purpose.",
-    "Leadership Affirmation: Standards are strongest when leadership is visible.",
-    "Leadership Affirmation: Calm leadership creates lasting results.",
-    "Leadership Affirmation: Leadership is reinforcing the standard every day.",
-    "Leadership Affirmation: Strong leaders set direction and maintain it."
-
-]
-
-TRAINER_REMINDER = "Trainers: Please remember to submit training reports for any training completed today. Thank you!"
-
-HOLIDAYS = {
-    "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
-    "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
-}
 
 @app.route("/scheduled/send", methods=["GET"])
 def scheduled_send():
@@ -458,22 +380,25 @@ def scheduled_send():
     if not SCHEDULE_SECRET or token != SCHEDULE_SECRET:
         return "Unauthorized", 401
 
-    # Choose message based on kind
     if kind == "trainer_reminder":
         msg = TRAINER_REMINDER
-
     elif kind == "affirmation":
         mmdd = datetime.datetime.now().strftime("%m-%d")
         msg = HOLIDAYS.get(mmdd, random.choice(AFFIRMATIONS))
-
     else:
         return "Bad Request: kind must be affirmation or trainer_reminder", 400
 
     send_groupme_message(msg)
     return "OK", 200
 
+@app.route("/scheduled/release_update", methods=["GET"])
+def scheduled_release_update():
+    token = request.args.get("token", "")
+    if not SCHEDULE_SECRET or token != SCHEDULE_SECRET:
+        return "Unauthorized", 401
 
-
+    send_groupme_message(UPDATE_NOTE)
+    return "OK", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
