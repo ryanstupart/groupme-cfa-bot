@@ -1301,7 +1301,7 @@ TRAINER_REMINDER = (
 )
 
 MOBILE_DINE_IN_REMINDER = (
-    "Friday Reminder: Please go into Control Point and turn Mobile Dine-In back on "
+    "Friday Reminder: Please go into ControlPoint and turn Mobile Dine-In back on "
     "before the end of the day. Thank you!"
 )
 
