@@ -1305,6 +1305,10 @@ MOBILE_DINE_IN_REMINDER = (
     "before the end of the day. Thank you!"
 )
 
+SPORTS_SCHEDULE_REMINDER = (
+    "Leadership Reminder: When interviewing someone who participates in sports, or when a current team member shares a sports commitment, please ask them to:\n\n1. Provide a copy of their practice and game/competition schedule, including updates as it changes.\n2. Update their availability in HotSchedules to reflect recurring commitments.\n3. Submit time-off requests in HotSchedules for specific dates they need off.\n\nFor applicants, collect the schedule and discuss availability during the interview, then help them complete the HotSchedules steps once hired.\n\nHaving this information early helps us stay consistent as a leadership team, accommodate sports commitments, and plan coverage for the times the restaurant needs support most. Please make these expectations clear and follow up on missing information. Thank you!"
+)
+
 HOLIDAYS = {
     "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
     "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
@@ -1411,11 +1415,13 @@ def scheduled_send():
         msg = TRAINER_REMINDER
     elif kind == "mobile_dine_in_reminder":
         msg = MOBILE_DINE_IN_REMINDER
+    elif kind == "sports_schedule_reminder":
+        msg = SPORTS_SCHEDULE_REMINDER
     elif kind == "affirmation":
         mmdd = datetime.datetime.now().strftime("%m-%d")
         msg = HOLIDAYS.get(mmdd, random.choice(AFFIRMATIONS))
     else:
-        return "Bad Request: kind must be affirmation, trainer_reminder, or mobile_dine_in_reminder", 400
+        return "Bad Request: kind must be affirmation, trainer_reminder, mobile_dine_in_reminder, or sports_schedule_reminder", 400
 
     send_groupme_message(msg)
     return "OK", 200
