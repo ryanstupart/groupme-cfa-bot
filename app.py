@@ -1297,7 +1297,7 @@ AFFIRMATIONS = [
 ]
 
 TRAINER_REMINDER = (
-    "Hey trainers! 🐮 Please submit your training reports promptly after any training completed today. Your timely updates are key to keeping training consistent and helping the next trainer pick up where you left off. Share what was covered, progress made, and any areas that need more practice or support. These reports help leadership coordinate training schedules, keep everyone on the same page, and make sure each team member receives the support they need. Thank you for investing in our team and helping everyone grow! 💛"
+    "Hey trainers! 🐮 Please submit your training reports promptly after any training completed today. Your timely updates are key to keeping training consistent and helping the next trainer pick up where you left off. Share what was covered, progress made, and any areas that need more practice or support. These reports help leadership coordinate training schedules, keep everyone on the same page, and make sure each team member receives the support they need. Thank you for investing in our team and helping everyone grow!"
 )
 
 HOLIDAYS = {
