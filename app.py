@@ -1300,6 +1300,11 @@ TRAINER_REMINDER = (
     "Hey trainers! 🐮 Please submit your training reports promptly after any training completed today. Your timely updates are key to keeping training consistent and helping the next trainer pick up where you left off. Share what was covered, progress made, and any areas that need more practice or support. These reports help leadership coordinate training schedules, keep everyone on the same page, and make sure each team member receives the support they need. Thank you for investing in our team and helping everyone grow!"
 )
 
+MOBILE_DINE_IN_REMINDER = (
+    "Friday Reminder: Please go into Control Point and turn Mobile Dine-In back on "
+    "before the end of the day. Thank you!"
+)
+
 HOLIDAYS = {
     "12-25": "Merry Christmas! Thank you for leading with excellence and reinforcing standards.",
     "01-01": "Happy New Year! Let’s lead with clarity, consistency, and strong standards.",
@@ -1404,11 +1409,13 @@ def scheduled_send():
 
     if kind == "trainer_reminder":
         msg = TRAINER_REMINDER
+    elif kind == "mobile_dine_in_reminder":
+        msg = MOBILE_DINE_IN_REMINDER
     elif kind == "affirmation":
         mmdd = datetime.datetime.now().strftime("%m-%d")
         msg = HOLIDAYS.get(mmdd, random.choice(AFFIRMATIONS))
     else:
-        return "Bad Request: kind must be affirmation or trainer_reminder", 400
+        return "Bad Request: kind must be affirmation, trainer_reminder, or mobile_dine_in_reminder", 400
 
     send_groupme_message(msg)
     return "OK", 200
