@@ -290,7 +290,7 @@ COVERAGE_REMINDER = (
 )
 
 UPDATE_NOTE = (
-    "Eat Mor Chikin Update: 300 new leadership affirmations have been added, bringing the collection to 305! These messages focus on coaching, accountability, teamwork, guest care, and leading calmly under pressure. Scheduled affirmation messages will now draw from the expanded collection; holiday greetings still apply on designated dates. For leadership questions, continue starting your message with mgmt:. Autonomous coverage reminders remain in beta. Thank you for leading by example and supporting your team!"
+    "Hey leaders! 🐮✨ I’ve added 300 new leadership affirmations to bring a little more encouragement to your day! From navigating a busy rush to helping someone grow, these messages are here to remind you that the little things you do as a leader matter. 💛\n\nHave a leadership question or need a fresh perspective? Start your message with mgmt:—I’m happy to help!\n\nThank you for showing up, supporting each other, and caring for our team and guests. Let’s keep growing together, one shift at a time! 🙌"
 )
 
 AFFIRMATIONS = [
